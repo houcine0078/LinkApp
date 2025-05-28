@@ -3,10 +3,9 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.*;
 
 // Add this import for JSON parsing
-import org.json.JSONObject;
+import services.FirebaseAuthService;
 
 public class RegisterInterface extends JDialog {
     private final Color PRIMARY_COLOR = new Color(41, 128, 185);

@@ -1,12 +1,10 @@
 import UI.SplashScreen;
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +18,7 @@ import java.util.Iterator;
 import UI.RoundedShadowBorder;
 import UI.AnimatedBackground;
 import UI.ModernShadowBorder;
+import services.FirebaseAuthService;
 
 
 public class LoginInterface extends JFrame {

@@ -6,16 +6,15 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
+import UI.RoundedBorder;
 import okhttp3.*;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 import java.io.IOException;
-import UI.RoundedBorder;
-import javax.swing.Timer;
 import org.kordamp.ikonli.swing.FontIcon;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
-import org.kordamp.ikonli.materialdesign.MaterialDesign;
+import services.FirebaseAuthService;
 
 public class ChatInterface extends JFrame {
     private JPanel chatPanel;
@@ -531,6 +530,19 @@ public class ChatInterface extends JFrame {
         memberList.setBackground(Color.WHITE);
         memberList.setFixedCellHeight(64);
         memberList.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
+        memberList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int index = memberList.locationToIndex(e.getPoint());
+                if (index != -1) {
+                    if (memberList.isSelectedIndex(index)) {
+                        memberList.removeSelectionInterval(index, index);
+                    } else {
+                        memberList.addSelectionInterval(index, index);
+                    }
+                }
+            }
+        });
         JScrollPane memberScrollPane = new JScrollPane(memberList);
         memberScrollPane.setPreferredSize(new Dimension(350, 200));
         memberScrollPane.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
