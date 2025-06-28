@@ -29,6 +29,14 @@ import java.awt.event.MouseEvent;
 
 import org.json.JSONObject;
 import okhttp3.*;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
+import java.util.Properties;
 
 public class LoginInterface extends JFrame {
     private JTextField usernameField;
@@ -122,12 +130,15 @@ public class LoginInterface extends JFrame {
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         statusLabel.setForeground(ACCENT_COLOR);
         statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        statusLabel.setPreferredSize(new Dimension(300, 30));
+        statusLabel.setMinimumSize(new Dimension(300, 30));
+        statusLabel.setMaximumSize(new Dimension(300, 30));
 
         // Form panel with modern styling
         JPanel formPanel = new JPanel();
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.setOpaque(false);
-        formPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         formPanel.setMaximumSize(new Dimension(300, 400));
 
         // Username field
@@ -190,7 +201,7 @@ public class LoginInterface extends JFrame {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
         buttonPanel.setOpaque(false);
-        buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         buttonPanel.setMaximumSize(new Dimension(300, 120));
         buttonPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
 
@@ -201,18 +212,18 @@ public class LoginInterface extends JFrame {
         // Add vertical space between buttons
         buttonPanel.add(Box.createVerticalStrut(20));
 
-        // Register button with modern styling
+        // Register button
         registerButton = createModernButton("Register", SECONDARY_COLOR, Color.WHITE);
         registerButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         registerButton.setBorder(new EmptyBorder(20, 0, 0, 0)); // Additional spacing
 
         // Add components to form panel
         formPanel.add(usernameLabel);
-        formPanel.add(Box.createVerticalStrut(5));
+        formPanel.add(Box.createVerticalStrut(10));
         formPanel.add(usernameField);
         formPanel.add(Box.createVerticalStrut(20));
         formPanel.add(passwordLabel);
-        formPanel.add(Box.createVerticalStrut(5));
+        formPanel.add(Box.createVerticalStrut(10));
         formPanel.add(passwordField);
         formPanel.add(Box.createVerticalStrut(5));
         formPanel.add(forgotPasswordLabel);
@@ -233,8 +244,10 @@ public class LoginInterface extends JFrame {
         // Add components to content panel
         contentPanel.add(formPanel);
         contentPanel.add(Box.createVerticalStrut(10));
+        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         contentPanel.add(statusLabel);
         contentPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         contentPanel.add(buttonPanel);
 
         // Add all panels to main panel
@@ -465,7 +478,7 @@ public class LoginInterface extends JFrame {
         forgotDialog.getContentPane().setBackground(BACKGROUND_COLOR);
         forgotDialog.setResizable(false);
 
-        // Create main panel with modern styling
+        // Create main panel
         JPanel mainPanel = new JPanel(new BorderLayout(0, 20));
         mainPanel.setBackground(Color.WHITE);
         mainPanel.setBorder(new EmptyBorder(30, 35, 30, 35));
@@ -658,14 +671,6 @@ public class LoginInterface extends JFrame {
                     statusLabel.setText("Access code sent successfully!");
                     statusLabel.setForeground(new Color(0, 150, 0));
 
-                    // Show success dialog with instructions
-                    JOptionPane.showMessageDialog(dialog,
-                            "A 6-digit access code has been sent to " + email +
-                                    "\n\nCode: " + tempCode + // Show code since email sending isn't implemented
-                                    "\n\nUse this code to log in, then you'll be prompted to set a new password.",
-                            "Access Code Sent",
-                            JOptionPane.INFORMATION_MESSAGE);
-
                     dialog.dispose();
                 });
 
@@ -752,13 +757,38 @@ public class LoginInterface extends JFrame {
 
     // Send email with temporary code (placeholder - implement with actual email service)
     private void sendCodeEmail(String email, String code) {
-        // For demonstration - you would integrate with an email service like SendGrid, etc.
-        System.out.println("=== TEMPORARY ACCESS CODE ===");
-        System.out.println("Email: " + email);
-        System.out.println("Code: " + code);
-        System.out.println("This code will expire in 1 hour.");
-        System.out.println("============================");
-        // TODO: Implement actual email sending with JavaMail or email service API
+
+        final String username = "linkapp.java@gmail.com"; // your email
+        final String password = "avdb xrdx xbse glav";    // your app password (not your Gmail password!)
+
+        java.util.Properties props = new java.util.Properties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+
+        jakarta.mail.Session session = jakarta.mail.Session.getInstance(props,
+            new jakarta.mail.Authenticator() {
+                protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
+                    return new jakarta.mail.PasswordAuthentication(username, password);
+                }
+            });
+
+        try {
+            jakarta.mail.Message message = new jakarta.mail.internet.MimeMessage(session);
+            message.setFrom(new jakarta.mail.internet.InternetAddress(username));
+            message.setRecipients(jakarta.mail.Message.RecipientType.TO, jakarta.mail.internet.InternetAddress.parse(email));
+            message.setSubject("Your LinkApp Access Code");
+            message.setText("Your 6-digit access code is: " + code + "\n\nThis code will expire in 1 hour.");
+
+            jakarta.mail.Transport.send(message);
+
+            System.out.println("Access code email sent to " + email);
+
+        } catch (jakarta.mail.MessagingException e) {
+            e.printStackTrace();
+            // Optionally, handle error (e.g., show a message to the user)
+        }
     }
 
     // Password Change Dialog (shown after login with temporary code)
