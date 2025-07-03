@@ -17,6 +17,16 @@ import java.io.IOException;
 import org.kordamp.ikonli.swing.FontIcon;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
 import services.FirebaseAuthService;
+import java.io.File;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.GridBagLayout;
+// Add import for JFileDialog
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Bucket;
+import com.google.firebase.cloud.StorageClient;
+import java.awt.image.BufferedImage;
+
 
 public class ChatInterface extends JFrame {
     private JPanel chatPanel;
@@ -123,12 +133,13 @@ public class ChatInterface extends JFrame {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         buttonPanel.setBackground(Color.WHITE);
 
-        JButton newChatButton = new JButton(FontIcon.of(FontAwesome.PENCIL, 20, PRIMARY_COLOR));
-        newChatButton.setBorderPainted(false);
-        newChatButton.setContentAreaFilled(false);
-        newChatButton.setFocusPainted(false);
-        newChatButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        newChatButton.setToolTipText("New Chat");
+        JButton profileButton = new JButton(FontIcon.of(FontAwesome.USER, 20, PRIMARY_COLOR));
+        profileButton.setBorderPainted(false);
+        profileButton.setContentAreaFilled(false);
+        profileButton.setFocusPainted(false);
+        profileButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        profileButton.setToolTipText("Profile");
+        profileButton.addActionListener(e -> showProfileDialog());
 
         JButton newGroupButton = new JButton(FontIcon.of(FontAwesome.USERS, 20, GROUP_COLOR));
         newGroupButton.setBorderPainted(false);
@@ -138,8 +149,17 @@ public class ChatInterface extends JFrame {
         newGroupButton.setToolTipText("New Group");
         newGroupButton.addActionListener(e -> showCreateGroupDialog());
 
-        buttonPanel.add(newChatButton);
+        JButton logoutButton = new JButton(FontIcon.of(FontAwesome.SIGN_OUT, 20, ACCENT_COLOR));
+        logoutButton.setBorderPainted(false);
+        logoutButton.setContentAreaFilled(false);
+        logoutButton.setFocusPainted(false);
+        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutButton.setToolTipText("Logout");
+        logoutButton.addActionListener(e -> logout());
+
+        buttonPanel.add(profileButton);
         buttonPanel.add(newGroupButton);
+        buttonPanel.add(logoutButton);
 
         header.add(titleLabel, BorderLayout.WEST);
         header.add(buttonPanel, BorderLayout.EAST);
@@ -183,9 +203,6 @@ public class ChatInterface extends JFrame {
 
         return searchPanel;
     }
-
-
-
 
     private JScrollPane createChatList() {
         chatList.setFont(new Font("Segoe UI", Font.PLAIN, 16));
@@ -1446,6 +1463,467 @@ public class ChatInterface extends JFrame {
         emojiMenu.revalidate();
         emojiMenu.repaint();
         emojiMenu.show(emojiButton, 0, -emojiMenu.getPreferredSize().height);
+    }
+
+    private void logout() {
+        // Create custom themed dialog
+        JDialog dialog = new JDialog(this, "Logout", true);
+        dialog.setSize(380, 210);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+        dialog.getContentPane().setBackground(BACKGROUND_COLOR);
+        dialog.setResizable(false);
+
+        // Main content panel with rounded background
+        JPanel contentPanel = new JPanel(new BorderLayout(0, 10)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+                g2.setColor(BORDER_COLOR);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 20, 20);
+                g2.dispose();
+            }
+        };
+        contentPanel.setOpaque(false);
+        contentPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
+
+        // Title label
+        JLabel titleLabel = new JLabel("Logout Confirmation");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        titleLabel.setForeground(TEXT_COLOR);
+        titleLabel.setHorizontalAlignment(JLabel.LEFT);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 6, 0));
+
+        // Icon and message panel (centered vertically)
+        JPanel rowPanel = new JPanel();
+        rowPanel.setOpaque(false);
+        rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.X_AXIS));
+        rowPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+
+        // Warning icon
+        JPanel iconPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(0, 0, ACCENT_COLOR.brighter(), 0, getHeight(), ACCENT_COLOR.darker());
+                g2.setPaint(gp);
+                g2.fillOval(0, 0, 45, 45);
+                g2.setColor(new Color(0, 0, 0, 30));
+                g2.fillOval(2, 2, 45, 45);
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 20));
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (45 - fm.stringWidth("!")) / 2;
+                int y = (45 + fm.getAscent() - fm.getDescent()) / 2;
+                g2.drawString("!", x, y);
+                g2.dispose();
+            }
+        };
+        iconPanel.setPreferredSize(new Dimension(45, 45));
+        iconPanel.setMinimumSize(new Dimension(45, 45));
+        iconPanel.setMaximumSize(new Dimension(45, 45));
+        iconPanel.setOpaque(false);
+        iconPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        iconPanel.setBorder(new EmptyBorder(0, 8, 0, 20)); // left and right margin
+
+        // Message text
+        JLabel messageLabel = new JLabel("<html><div style='font-size:13px; color:#34495e; width:220px;'>Are you sure you want to logout?</div></html>");
+        messageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        messageLabel.setForeground(TEXT_COLOR);
+        messageLabel.setHorizontalAlignment(SwingConstants.LEFT);
+        messageLabel.setBorder(new EmptyBorder(0, 12, 0, 0));
+       
+
+        rowPanel.add(iconPanel);
+        rowPanel.add(messageLabel);
+
+        // Buttons panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setOpaque(false);
+
+        JButton cancelButton = new JButton("Cancel") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(BORDER_COLOR.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(BACKGROUND_COLOR);
+                } else {
+                    g2.setColor(Color.WHITE);
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                g2.setColor(BORDER_COLOR);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+                super.paintComponent(g2);
+                g2.dispose();
+            }
+        };
+        cancelButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        cancelButton.setForeground(TEXT_COLOR);
+        cancelButton.setPreferredSize(new Dimension(85, 35));
+        cancelButton.setBorderPainted(false);
+        cancelButton.setContentAreaFilled(false);
+        cancelButton.setFocusPainted(false);
+        cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        JButton logoutButton = new JButton("Logout") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isPressed()) {
+                    g2.setColor(ACCENT_COLOR.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(ACCENT_COLOR.brighter());
+                } else {
+                    g2.setColor(ACCENT_COLOR);
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                super.paintComponent(g2);
+                g2.dispose();
+            }
+        };
+        logoutButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setPreferredSize(new Dimension(85, 35));
+        logoutButton.setBorderPainted(false);
+        logoutButton.setContentAreaFilled(false);
+        logoutButton.setFocusPainted(false);
+        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutButton.addActionListener(e -> {
+            dialog.dispose();
+            performLogout();
+        });
+
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(logoutButton);
+
+        // Add components to content panel
+        contentPanel.add(titleLabel, BorderLayout.NORTH);
+        contentPanel.add(rowPanel, BorderLayout.CENTER);
+        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.add(contentPanel);
+        dialog.setVisible(true);
+    }
+
+    private void performLogout() {
+        // Stop message listener
+        stopMessageListener();
+        
+        // Close current window
+        this.dispose();
+        
+        // Open login interface
+        SwingUtilities.invokeLater(() -> {
+            LoginInterface loginInterface = new LoginInterface();
+            loginInterface.setVisible(true);
+        });
+    }
+
+    private void showProfileDialog() {
+        JDialog dialog = new JDialog(this, "My Profile", true);
+        dialog.setSize(370, 500);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+        dialog.getContentPane().setBackground(BACKGROUND_COLOR);
+        dialog.setResizable(false);
+
+        // Use BoxLayout for vertical alignment
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(new EmptyBorder(24, 32, 24, 32));
+        contentPanel.setBackground(BACKGROUND_COLOR);
+
+        // Title
+        JLabel titleLabel = new JLabel("My Profile");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setForeground(TEXT_COLOR);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(titleLabel);
+        contentPanel.add(Box.createVerticalStrut(18));
+
+        // Avatar preview (perfectly round)
+        int avatarSize = 90;
+        String currentAvatar = userCache.containsKey(currentUserEmail) ? userCache.get(currentUserEmail).avatar : "";
+        File avatarFile = (currentAvatar != null && !currentAvatar.isEmpty()) ? new File(currentAvatar) : null;
+        String initial = currentUserEmail.substring(0, 1).toUpperCase();
+        JPanel avatarPanel = new JPanel() {
+            Image avatarImg = null;
+            boolean hasImage = false;
+            {
+                setPreferredSize(new Dimension(avatarSize, avatarSize));
+                setMaximumSize(new Dimension(avatarSize, avatarSize));
+                setMinimumSize(new Dimension(avatarSize, avatarSize));
+                setOpaque(false);
+                if (avatarFile != null && avatarFile.exists()) {
+                    try {
+                        avatarImg = new ImageIcon(avatarFile.getPath()).getImage().getScaledInstance(avatarSize, avatarSize, Image.SCALE_SMOOTH);
+                        hasImage = true;
+                    } catch (Exception e) {
+                        hasImage = false;
+                    }
+                }
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillOval(0, 0, avatarSize, avatarSize);
+                if (hasImage && avatarImg != null) {
+                    g2.setClip(new java.awt.geom.Ellipse2D.Float(0, 0, avatarSize, avatarSize));
+                    g2.drawImage(avatarImg, 0, 0, avatarSize, avatarSize, null);
+                } else {
+                    g2.setColor(PRIMARY_COLOR);
+                    g2.setFont(new Font("Segoe UI", Font.BOLD, 40));
+                    FontMetrics fm = g2.getFontMetrics();
+                    int x = (avatarSize - fm.stringWidth(initial)) / 2;
+                    int y = (avatarSize + fm.getAscent() - fm.getDescent()) / 2;
+                    g2.drawString(initial, x, y);
+                }
+                g2.dispose();
+            }
+        };
+        avatarPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(avatarPanel);
+        contentPanel.add(Box.createVerticalStrut(10));
+
+        // Upload button with loading indicator
+        JPanel uploadPanel = new JPanel();
+        uploadPanel.setLayout(new BoxLayout(uploadPanel, BoxLayout.X_AXIS));
+        uploadPanel.setOpaque(false);
+        JButton uploadButton = new JButton("Upload Picture");
+        styleDialogButton(uploadButton, SECONDARY_COLOR, SECONDARY_COLOR, Color.WHITE);
+        uploadButton.setPreferredSize(new Dimension(160, 38));
+        uploadButton.setMaximumSize(new Dimension(160, 38));
+        uploadButton.setMinimumSize(new Dimension(160, 38));
+        JProgressBar uploadProgress = new JProgressBar();
+        uploadProgress.setIndeterminate(true);
+        uploadProgress.setVisible(false);
+        uploadProgress.setPreferredSize(new Dimension(30, 30));
+        uploadPanel.add(Box.createHorizontalGlue());
+        uploadPanel.add(uploadButton);
+        uploadPanel.add(Box.createHorizontalStrut(8));
+        uploadPanel.add(uploadProgress);
+        uploadPanel.add(Box.createHorizontalGlue());
+        uploadPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(uploadPanel);
+        contentPanel.add(Box.createVerticalStrut(18));
+
+        // Store the selected avatar path
+        final String[] selectedAvatarPath = {currentAvatar};
+
+        uploadButton.addActionListener(e -> {
+            CustomFilePicker picker = new CustomFilePicker(this, "Select Image", new File(System.getProperty("user.home")));
+            picker.setVisible(true);
+            File file = picker.getSelectedFile();
+            if (file != null) {
+                uploadButton.setEnabled(false);
+                uploadProgress.setVisible(true);
+                new Thread(() -> {
+                    try {
+                        String userId = currentUserEmail.replaceAll("[^a-zA-Z0-9]", "_");
+                        String imageUrl = uploadProfilePictureToFirebase(file, userId);
+                        selectedAvatarPath[0] = imageUrl;
+                        SwingUtilities.invokeLater(() -> {
+                            // Update avatarPanel to show new image
+                            ((JPanel)avatarPanel).removeAll();
+                            avatarPanel.repaint();
+                        });
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(dialog, "Failed to upload image to Firebase Storage.", "Error", JOptionPane.ERROR_MESSAGE));
+                    } finally {
+                        SwingUtilities.invokeLater(() -> {
+                            uploadButton.setEnabled(true);
+                            uploadProgress.setVisible(false);
+                        });
+                    }
+                }).start();
+            }
+        });
+
+        // Display name
+        JLabel nameLabel = new JLabel("Display Name:");
+        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        nameLabel.setForeground(TEXT_COLOR);
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(nameLabel);
+        contentPanel.add(Box.createVerticalStrut(4));
+        JTextField nameField = new JTextField();
+        nameField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        nameField.setText(currentUserEmail.split("@")[0]);
+        nameField.setBorder(new EmptyBorder(8, 10, 8, 10));
+        nameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        nameField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(nameField);
+        contentPanel.add(Box.createVerticalStrut(10));
+
+        // Email (not editable)
+        JLabel emailLabel = new JLabel("Email:");
+        emailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        emailLabel.setForeground(TEXT_COLOR);
+        emailLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(emailLabel);
+        contentPanel.add(Box.createVerticalStrut(4));
+        JLabel emailValue = new JLabel(currentUserEmail);
+        emailValue.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        emailValue.setForeground(TEXT_COLOR);
+        emailValue.setBorder(new EmptyBorder(8, 10, 8, 10));
+        emailValue.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(emailValue);
+        contentPanel.add(Box.createVerticalStrut(18));
+
+        // Buttons
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.setOpaque(false);
+        JButton saveButton = new JButton("Save");
+        styleDialogButton(saveButton, PRIMARY_COLOR, PRIMARY_COLOR, Color.WHITE);
+        saveButton.setPreferredSize(new Dimension(120, 38));
+        saveButton.setMaximumSize(new Dimension(120, 38));
+        saveButton.setMinimumSize(new Dimension(120, 38));
+        JButton deleteButton = new JButton("Delete Profile");
+        styleDialogButton(deleteButton, ACCENT_COLOR, ACCENT_COLOR, Color.WHITE);
+        deleteButton.setPreferredSize(new Dimension(120, 38));
+        deleteButton.setMaximumSize(new Dimension(120, 38));
+        deleteButton.setMinimumSize(new Dimension(120, 38));
+        buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.add(saveButton);
+        buttonPanel.add(Box.createHorizontalStrut(8));
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(buttonPanel);
+
+        // Save and delete actions (same as before)
+        saveButton.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    OkHttpClient client = new OkHttpClient();
+                    String databaseUrl = FirebaseAuthService.getDatabaseUrl();
+                    String email = currentUserEmail;
+                    String getUrl = databaseUrl + "/users.json?orderBy=\"email\"&equalTo=\"" + email + "\"";
+                    Request getRequest = new Request.Builder().url(getUrl).get().build();
+                    Response getResponse = client.newCall(getRequest).execute();
+                    String getResponseBody = getResponse.body().string();
+                    JSONObject usersJson = new JSONObject(getResponseBody);
+                    if (usersJson.length() > 0) {
+                        String userKey = usersJson.keys().next();
+                        JSONObject userObj = usersJson.getJSONObject(userKey);
+                        userObj.put("displayName", nameField.getText().trim());
+                        userObj.put("avatar", selectedAvatarPath[0] != null ? selectedAvatarPath[0] : "");
+                        String putUrl = databaseUrl + "/users/" + userKey + ".json";
+                        RequestBody putBody = RequestBody.create(userObj.toString(), MediaType.parse("application/json; charset=utf-8"));
+                        Request putRequest = new Request.Builder().url(putUrl).put(putBody).build();
+                        client.newCall(putRequest).execute();
+                        SwingUtilities.invokeLater(() -> {
+                            dialog.dispose();
+                            fetchUsersAndGroups();
+                            chatList.repaint();
+                            JOptionPane.showMessageDialog(this, "Profile updated!\nIf you don't see the change, please restart the app.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        });
+                    } else {
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "User not found in database.", "Error", JOptionPane.ERROR_MESSAGE));
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Failed to update profile.", "Error", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        });
+        deleteButton.addActionListener(e -> {
+            int result = JOptionPane.showConfirmDialog(dialog, "Are you sure you want to delete your profile? This cannot be undone.", "Delete Profile", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (result == JOptionPane.YES_OPTION) {
+                new Thread(() -> {
+                    try {
+                        OkHttpClient client = new OkHttpClient();
+                        String databaseUrl = FirebaseAuthService.getDatabaseUrl();
+                        String email = currentUserEmail;
+                        String getUrl = databaseUrl + "/users.json?orderBy=\"email\"&equalTo=\"" + email + "\"";
+                        Request getRequest = new Request.Builder().url(getUrl).get().build();
+                        Response getResponse = client.newCall(getRequest).execute();
+                        String getResponseBody = getResponse.body().string();
+                        JSONObject usersJson = new JSONObject(getResponseBody);
+                        if (usersJson.length() > 0) {
+                            String userKey = usersJson.keys().next();
+                            String deleteUrl = databaseUrl + "/users/" + userKey + ".json";
+                            Request deleteRequest = new Request.Builder().url(deleteUrl).delete().build();
+                            client.newCall(deleteRequest).execute();
+                            SwingUtilities.invokeLater(() -> {
+                                dialog.dispose();
+                                JOptionPane.showMessageDialog(this, "Profile deleted.", "Deleted", JOptionPane.INFORMATION_MESSAGE);
+                                logout();
+                            });
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Failed to delete profile.", "Error", JOptionPane.ERROR_MESSAGE));
+                    }
+                }).start();
+            }
+        });
+
+        dialog.add(contentPanel, BorderLayout.CENTER);
+        dialog.setVisible(true);
+    }
+
+    // Helper to show JFileChooser with guaranteed system LookAndFeel
+    private java.io.File showSystemFileChooser(Component parent) {
+        java.io.File selectedFile = null;
+        String oldLF = UIManager.getLookAndFeel().getClass().getName();
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ex) { }
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        int result = fileChooser.showOpenDialog(parent);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            selectedFile = fileChooser.getSelectedFile();
+        }
+        try {
+            UIManager.setLookAndFeel(oldLF);
+        } catch (Exception ex) { }
+        // Update the parent and file chooser UI
+        SwingUtilities.updateComponentTreeUI(parent);
+        SwingUtilities.updateComponentTreeUI(fileChooser);
+        return selectedFile;
+    }
+
+    // Helper to upload profile picture to Firebase Storage
+    public String uploadProfilePictureToFirebase(File file, String userId) throws Exception {
+        Bucket bucket = StorageClient.getInstance().bucket();
+        String blobString = "profile_pictures/" + userId + ".png";
+        Blob blob = bucket.create(blobString, new java.io.FileInputStream(file), "image/png");
+        blob.createAcl(com.google.cloud.storage.Acl.of(com.google.cloud.storage.Acl.User.ofAllUsers(), com.google.cloud.storage.Acl.Role.READER));
+        return String.format("https://storage.googleapis.com/%s/%s", bucket.getName(), blobString);
+    }
+
+    // Helper to set a circular avatar from a URL
+    private void setCircularAvatarFromUrl(JLabel label, String imageUrl, int size) {
+        try {
+            ImageIcon icon = new ImageIcon(new java.net.URL(imageUrl));
+            Image img = icon.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
+            BufferedImage circleBuffer = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = circleBuffer.createGraphics();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setClip(new java.awt.geom.Ellipse2D.Float(0, 0, size, size));
+            g2.drawImage(img, 0, 0, size, size, null);
+            g2.dispose();
+            label.setIcon(new ImageIcon(circleBuffer));
+            label.setText("");
+        } catch (Exception e) {
+            label.setIcon(null);
+            label.setText("?");
+        }
     }
 
     public static void main(String[] args) {

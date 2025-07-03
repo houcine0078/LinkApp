@@ -492,7 +492,7 @@ public class LoginInterface extends JFrame {
         titleLabel.setForeground(PRIMARY_COLOR);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        JLabel subtitleLabel = new JLabel("We'll send you a temporary 6-digit access code");
+        JLabel subtitleLabel = new JLabel("We'll send you a temporary 6-digit access code ");
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         subtitleLabel.setForeground(TEXT_COLOR);
         subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
