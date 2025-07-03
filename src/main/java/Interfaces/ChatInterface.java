@@ -26,6 +26,12 @@ import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import com.google.firebase.cloud.StorageClient;
 import java.awt.image.BufferedImage;
+import UI.UserListRenderer;
+import UI.ModernChatListRenderer;
+import model.Message;
+import model.UserInfo;
+import model.GroupInfo;
+import model.ChatItem;
 
 
 public class ChatInterface extends JFrame {
@@ -33,6 +39,7 @@ public class ChatInterface extends JFrame {
     private JTextField inputField;
     private JButton sendButton;
     private JButton emojiButton;
+    private JButton fileButton;
     private JList<ChatItem> chatList;
     private DefaultListModel<ChatItem> chatListModel;
     private String currentUserEmail;
@@ -91,6 +98,7 @@ public class ChatInterface extends JFrame {
         inputField = new JTextField();
         sendButton = new JButton();
         emojiButton = new JButton();
+        fileButton = new JButton();
         searchField = new JTextField();
         chattingWithLabel = new JLabel();
         onlineStatusLabel = new JLabel();
@@ -328,6 +336,13 @@ public class ChatInterface extends JFrame {
         inputField.setBorder(new EmptyBorder(12, 20, 12, 15));
         inputField.setBackground(BACKGROUND_COLOR);
         inputField.putClientProperty("JTextField.placeholderText", "Type a message...");
+        fileButton = new JButton(FontIcon.of(FontAwesome.PAPERCLIP, 20, PRIMARY_COLOR));
+        fileButton.setBorderPainted(false);
+        fileButton.setContentAreaFilled(false);
+        fileButton.setFocusPainted(false);
+        fileButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        fileButton.setPreferredSize(new Dimension(40, 40));
+        fileButton.addActionListener(e -> sendFileToCurrentChat());
         emojiButton = new JButton(FontIcon.of(FontAwesome.SMILE_O, 20, PRIMARY_COLOR));
         emojiButton.setBorderPainted(false);
         emojiButton.setContentAreaFilled(false);
@@ -360,6 +375,7 @@ public class ChatInterface extends JFrame {
         sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         JPanel buttonContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 4));
         buttonContainer.setBackground(BACKGROUND_COLOR);
+        buttonContainer.add(fileButton);
         buttonContainer.add(emojiButton);
         buttonContainer.add(sendButton);
         inputContainer.add(inputField, BorderLayout.CENTER);
@@ -532,7 +548,7 @@ public class ChatInterface extends JFrame {
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
         nameLabel.setForeground(TEXT_COLOR);
         namePanel.add(nameLabel, BorderLayout.NORTH);
-        JTextField groupNameField = new ModernTextField();
+        JTextField groupNameField = new JTextField();
         groupNameField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         namePanel.add(groupNameField, BorderLayout.CENTER);
 
@@ -543,7 +559,7 @@ public class ChatInterface extends JFrame {
         descLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
         descLabel.setForeground(TEXT_COLOR);
         descPanel.add(descLabel, BorderLayout.NORTH);
-        JTextField descField = new ModernTextField();
+        JTextField descField = new JTextField();
         descField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         descPanel.add(descField, BorderLayout.CENTER);
 
@@ -672,106 +688,6 @@ public class ChatInterface extends JFrame {
                 super.paint(g, c);
             }
         });
-    }
-
-    // Custom renderer for user list in group dialog
-    private class UserListRenderer extends DefaultListCellRenderer {
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                      boolean isSelected, boolean cellHasFocus) {
-            UserInfo user = (UserInfo) value;
-            JPanel panel = new JPanel(new BorderLayout(12, 0));
-            panel.setBorder(new EmptyBorder(10, 18, 10, 18));
-            panel.setOpaque(true);
-            if (isSelected) {
-                panel.setBackground(PRIMARY_COLOR);
-                panel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(Color.WHITE, 2),
-                    new EmptyBorder(10, 18, 10, 18)
-                ));
-            } else {
-                panel.setBackground(Color.WHITE);
-                panel.setBorder(new EmptyBorder(10, 18, 10, 18));
-            }
-
-            JPanel avatarPanel = new JPanel() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(PRIMARY_COLOR);
-                    g2.fillOval(0, 0, 36, 36);
-                    g2.setColor(Color.WHITE);
-                    g2.setFont(new Font("Segoe UI", Font.BOLD, 15));
-                    String initial = user.name.substring(0, 1).toUpperCase();
-                    FontMetrics fm = g2.getFontMetrics();
-                    int x = (36 - fm.stringWidth(initial)) / 2;
-                    int y = (36 + fm.getAscent() - fm.getDescent()) / 2;
-                    g2.drawString(initial, x, y);
-                    g2.dispose();
-                }
-            };
-            avatarPanel.setPreferredSize(new Dimension(36, 36));
-            avatarPanel.setOpaque(false);
-
-            JPanel userInfoPanel = new JPanel(new BorderLayout());
-            userInfoPanel.setOpaque(false);
-            JLabel nameLabel = new JLabel(user.name);
-            nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-            nameLabel.setForeground(isSelected ? Color.WHITE : TEXT_COLOR);
-            JLabel emailLabel = new JLabel(user.email);
-            emailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            emailLabel.setForeground(isSelected ? new Color(255,255,255,180) : BORDER_COLOR);
-            userInfoPanel.add(nameLabel, BorderLayout.NORTH);
-            userInfoPanel.add(emailLabel, BorderLayout.SOUTH);
-
-            JPanel rightPanel = new JPanel(new BorderLayout());
-            rightPanel.setOpaque(false);
-            JLabel statusLabel = new JLabel("●");
-            statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            statusLabel.setForeground(user.status.equals("online") ? ONLINE_GREEN : BORDER_COLOR);
-            statusLabel.setBorder(new EmptyBorder(0, 0, 0, 8));
-            rightPanel.add(statusLabel, BorderLayout.WEST);
-            if (isSelected) {
-                JLabel check = new JLabel("\u2714"); // Unicode heavy checkmark
-                check.setFont(new Font("Segoe UI", Font.BOLD, 26));
-                check.setForeground(Color.WHITE);
-                rightPanel.add(check, BorderLayout.EAST);
-            }
-
-            panel.add(avatarPanel, BorderLayout.WEST);
-            panel.add(userInfoPanel, BorderLayout.CENTER);
-            panel.add(rightPanel, BorderLayout.EAST);
-            return panel;
-        }
-    }
-
-    // ModernTextField: white bg, blue border on focus, padding
-    private class ModernTextField extends JTextField {
-        private boolean hasFocus = false;
-        public ModernTextField() {
-            setBackground(Color.WHITE);
-            setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                new EmptyBorder(10, 14, 10, 14)));
-            setFont(new Font("Segoe UI", Font.PLAIN, 15));
-            setForeground(TEXT_COLOR);
-            setOpaque(true);
-            addFocusListener(new java.awt.event.FocusAdapter() {
-                public void focusGained(java.awt.event.FocusEvent e) {
-                    hasFocus = true;
-                    setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(PRIMARY_COLOR, 2),
-                        new EmptyBorder(10, 14, 10, 14)));
-                }
-                public void focusLost(java.awt.event.FocusEvent e) {
-                    hasFocus = false;
-                    setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                        new EmptyBorder(10, 14, 10, 14)));
-                }
-            });
-        }
     }
 
     private void createGroup(String name, String description, List<UserInfo> members) {
@@ -1202,6 +1118,42 @@ public class ChatInterface extends JFrame {
             return;
         }
 
+        // File message rendering
+        if ("file".equals(msg.type)) {
+            JPanel messagePanel = new JPanel(new FlowLayout(isMe ? FlowLayout.RIGHT : FlowLayout.LEFT, 0, 0));
+            messagePanel.setOpaque(false);
+            messagePanel.setBorder(new EmptyBorder(4, 0, 4, 0));
+            JPanel bubble = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(isMe ? MESSAGE_SENT : MESSAGE_RECEIVED);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                    g2.dispose();
+                }
+            };
+            bubble.setLayout(new BorderLayout());
+            bubble.setBorder(new EmptyBorder(12, 16, 12, 16));
+            JLabel fileLabel = new JLabel("<html><b>📎 " + msg.fileName + "</b> (" + readableFileSize(msg.fileSize) + ")<br><a href='" + msg.fileUrl + "'>Download</a></html>");
+            fileLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            fileLabel.setForeground(isMe ? Color.WHITE : TEXT_COLOR);
+            fileLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    try {
+                        Desktop.getDesktop().browse(new java.net.URI(msg.fileUrl));
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+            bubble.add(fileLabel, BorderLayout.CENTER);
+            messagePanel.add(bubble);
+            chatPanel.add(messagePanel);
+            return;
+        }
+
         JPanel messagePanel = new JPanel(new FlowLayout(isMe ? FlowLayout.RIGHT : FlowLayout.LEFT, 0, 0));
         messagePanel.setOpaque(false);
         messagePanel.setBorder(new EmptyBorder(4, 0, 4, 0));
@@ -1268,173 +1220,6 @@ public class ChatInterface extends JFrame {
         List<String> emails = Arrays.asList(email1, email2);
         Collections.sort(emails);
         return emails.get(0).replace(".", "_") + "_" + emails.get(1).replace(".", "_");
-    }
-
-    // Data classes
-    private static class Message {
-        String from, to, text;
-        long timestamp;
-        boolean isSystem;
-
-        Message(String from, String to, String text, long timestamp) {
-            this(from, to, text, timestamp, false);
-        }
-
-        Message(String from, String to, String text, long timestamp, boolean isSystem) {
-            this.from = from;
-            this.to = to;
-            this.text = text;
-            this.timestamp = timestamp;
-            this.isSystem = isSystem;
-        }
-    }
-
-    private static class UserInfo {
-        String email, name, status, avatar;
-        long lastSeen;
-        UserInfo(String email, String name, String status, String avatar, long lastSeen) {
-            this.email = email;
-            this.name = name;
-            this.status = status;
-            this.avatar = avatar;
-            this.lastSeen = lastSeen;
-        }
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-
-    private static class GroupInfo {
-        String id, name, description, createdBy;
-        List<String> members;
-        long createdAt;
-
-        GroupInfo(String id, String name, String description, List<String> members, String createdBy, long createdAt) {
-            this.id = id;
-            this.name = name;
-            this.description = description;
-            this.members = members;
-            this.createdBy = createdBy;
-            this.createdAt = createdAt;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-
-    private static class ChatItem {
-        Object chatInfo; // UserInfo or GroupInfo
-        boolean isGroup;
-
-        ChatItem(Object chatInfo, boolean isGroup) {
-            this.chatInfo = chatInfo;
-            this.isGroup = isGroup;
-        }
-
-        @Override
-        public String toString() {
-            if (isGroup) {
-                return ((GroupInfo) chatInfo).name;
-            } else {
-                return ((UserInfo) chatInfo).name;
-            }
-        }
-    }
-
-    private class ModernChatListRenderer extends DefaultListCellRenderer {
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                      boolean isSelected, boolean cellHasFocus) {
-            ChatItem chatItem = (ChatItem) value;
-            JPanel panel = new JPanel(new BorderLayout(12, 0));
-            panel.setBorder(new EmptyBorder(16, 20, 16, 20));
-            panel.setOpaque(true);
-            panel.setBackground(isSelected ? PRIMARY_COLOR : Color.WHITE);
-
-            JPanel avatarPanel = new JPanel() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                    if (chatItem.isGroup) {
-                        g2.setColor(GROUP_COLOR);
-                    } else {
-                        g2.setColor(PRIMARY_COLOR);
-                    }
-
-                    g2.fillOval(0, 0, 40, 40);
-                    g2.setColor(Color.WHITE);
-                    g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
-
-                    String initial;
-                    if (chatItem.isGroup) {
-                        GroupInfo group = (GroupInfo) chatItem.chatInfo;
-                        initial = group.name.substring(0, 1).toUpperCase();
-                    } else {
-                        UserInfo user = (UserInfo) chatItem.chatInfo;
-                        initial = user.name.substring(0, 1).toUpperCase();
-                    }
-
-                    FontMetrics fm = g2.getFontMetrics();
-                    int x = (40 - fm.stringWidth(initial)) / 2;
-                    int y = (40 + fm.getAscent() - fm.getDescent()) / 2;
-                    g2.drawString(initial, x, y);
-                    g2.dispose();
-                }
-            };
-            avatarPanel.setPreferredSize(new Dimension(40, 40));
-            avatarPanel.setOpaque(false);
-
-            JPanel chatInfo = new JPanel(new BorderLayout());
-            chatInfo.setOpaque(false);
-
-            String name, status;
-            Color statusColor;
-
-            if (chatItem.isGroup) {
-                GroupInfo group = (GroupInfo) chatItem.chatInfo;
-                name = group.name;
-                status = group.members.size() + " members";
-                statusColor = isSelected ? new Color(255, 255, 255, 180) : TEXT_COLOR;
-            } else {
-                UserInfo user = (UserInfo) chatItem.chatInfo;
-                name = user.name;
-                status = user.status.equals("online") ? "Online" : "Last seen recently";
-                statusColor = isSelected ? new Color(255, 255, 255, 180) : TEXT_COLOR;
-            }
-
-            JLabel nameLabel = new JLabel(name);
-            nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-            nameLabel.setForeground(isSelected ? Color.WHITE : TEXT_COLOR);
-
-            JLabel statusLabel = new JLabel(status);
-            statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            statusLabel.setForeground(statusColor);
-
-            chatInfo.add(nameLabel, BorderLayout.NORTH);
-            chatInfo.add(statusLabel, BorderLayout.SOUTH);
-
-            JLabel indicator = new JLabel();
-            if (chatItem.isGroup) {
-                indicator.setText("●");
-                indicator.setForeground(GROUP_COLOR);
-            } else {
-                UserInfo user = (UserInfo) chatItem.chatInfo;
-                indicator.setText("●");
-                indicator.setForeground(user.status.equals("online") ? ONLINE_GREEN : Color.WHITE);
-            }
-            indicator.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            indicator.setBorder(new EmptyBorder(0, 0, 0, 8));
-
-            panel.add(avatarPanel, BorderLayout.WEST);
-            panel.add(chatInfo, BorderLayout.CENTER);
-            panel.add(indicator, BorderLayout.EAST);
-            return panel;
-        }
     }
 
     private void showEmojiPicker() {
@@ -1674,9 +1459,9 @@ public class ChatInterface extends JFrame {
             }
             @Override
             protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Color.WHITE);
                 g2.fillOval(0, 0, avatarSize, avatarSize);
                 if (hasImage && avatarImg != null) {
                     g2.setClip(new java.awt.geom.Ellipse2D.Float(0, 0, avatarSize, avatarSize));
@@ -1689,8 +1474,8 @@ public class ChatInterface extends JFrame {
                     int y = (avatarSize + fm.getAscent() - fm.getDescent()) / 2;
                     g2.drawString(initial, x, y);
                 }
-                g2.dispose();
-            }
+                    g2.dispose();
+                }
         };
         avatarPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         contentPanel.add(avatarPanel);
@@ -1924,6 +1709,71 @@ public class ChatInterface extends JFrame {
             label.setIcon(null);
             label.setText("?");
         }
+    }
+
+    private void sendFileToCurrentChat() {
+        System.out.println("File button clicked!");
+        CustomFilePicker picker = new CustomFilePicker(this, "Select File", new File(System.getProperty("user.home")));
+        picker.setVisible(true);
+        File file = picker.getSelectedFile();
+        if (file != null) {
+            new Thread(() -> {
+                try {
+                    String userId = currentUserEmail.replaceAll("[^a-zA-Z0-9]", "_");
+                    String fileName = file.getName();
+                    String storagePath = "chat_files/" + userId + "_" + System.currentTimeMillis() + "_" + fileName;
+                    Bucket bucket = StorageClient.getInstance().bucket();
+                    Blob blob = bucket.create(storagePath, new java.io.FileInputStream(file), "application/octet-stream");
+                    blob.createAcl(com.google.cloud.storage.Acl.of(com.google.cloud.storage.Acl.User.ofAllUsers(), com.google.cloud.storage.Acl.Role.READER));
+                    String fileUrl = String.format("https://storage.googleapis.com/%s/%s", bucket.getName(), storagePath);
+                    sendFileMessageToChat(fileName, fileUrl, file.length());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Failed to upload file.", "Error", JOptionPane.ERROR_MESSAGE));
+                }
+            }).start();
+        }
+    }
+
+    private void sendFileMessageToChat(String fileName, String fileUrl, long fileSize) {
+        if (currentChat == null) return;
+        try {
+            OkHttpClient client = new OkHttpClient();
+            String databaseUrl = FirebaseAuthService.getDatabaseUrl();
+            String chatId;
+            String toField;
+            if (currentChat.isGroup) {
+                GroupInfo group = (GroupInfo) currentChat.chatInfo;
+                chatId = "group_" + group.id;
+                toField = chatId;
+            } else {
+                UserInfo user = (UserInfo) currentChat.chatInfo;
+                chatId = getChatId(currentUserEmail, user.email);
+                toField = user.email;
+            }
+            long timestamp = System.currentTimeMillis();
+            String url = databaseUrl + "/messages/" + chatId + "/" + timestamp + ".json";
+            JSONObject msgObj = new JSONObject();
+            msgObj.put("from", currentUserEmail);
+            msgObj.put("to", toField);
+            msgObj.put("timestamp", timestamp);
+            msgObj.put("type", "file");
+            msgObj.put("fileName", fileName);
+            msgObj.put("fileUrl", fileUrl);
+            msgObj.put("fileSize", fileSize);
+            RequestBody body = RequestBody.create(msgObj.toString(), MediaType.parse("application/json; charset=utf-8"));
+            Request request = new Request.Builder().url(url).put(body).build();
+            client.newCall(request).execute();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private String readableFileSize(long size) {
+        if (size <= 0) return "0";
+        final String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
+        int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
+        return new java.text.DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
     }
 
     public static void main(String[] args) {

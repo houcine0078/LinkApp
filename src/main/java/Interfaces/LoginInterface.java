@@ -114,7 +114,7 @@ public class LoginInterface extends JFrame {
 
         logoPanel.add(logoImagePanel, BorderLayout.CENTER);
 
-        // Create content panel with modern shadow effect
+        // Create content panel
         contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -156,7 +156,7 @@ public class LoginInterface extends JFrame {
         ));
         usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Password field with modern styling
+        // Password field
         JLabel passwordLabel = new JLabel("Password");
         passwordLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         passwordLabel.setForeground(TEXT_COLOR);
@@ -171,7 +171,7 @@ public class LoginInterface extends JFrame {
         ));
         passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Forgot password link with modern styling
+        // Forgot password link
         forgotPasswordLabel = new JLabel("Forgot Password?");
         forgotPasswordLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         forgotPasswordLabel.setForeground(PRIMARY_COLOR);
@@ -197,7 +197,7 @@ public class LoginInterface extends JFrame {
             }
         });
 
-        // Button panel with modern styling
+        // Button panel
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
         buttonPanel.setOpaque(false);
@@ -205,7 +205,7 @@ public class LoginInterface extends JFrame {
         buttonPanel.setMaximumSize(new Dimension(300, 120));
         buttonPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
 
-        // Login button with modern styling
+        // Login button
         loginButton = createModernButton("Login", PRIMARY_COLOR, Color.WHITE);
         loginButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -339,7 +339,7 @@ public class LoginInterface extends JFrame {
                     }
                 }
 
-                // Check if user exists in database first (for better error handling)
+                // Check if user exists in database first
                 String userResponse = FirebaseAuthService.getUserByEmail(email);
                 JSONObject userJson = new JSONObject(userResponse);
 
@@ -469,7 +469,7 @@ public class LoginInterface extends JFrame {
         return "Login failed. Please check your internet connection and try again.";
     }
 
-    // ENHANCED FORGOT PASSWORD DIALOG
+    // FORGOT PASSWORD DIALOG
     private void showForgotPasswordDialog() {
         JDialog forgotDialog = new JDialog(this, "Password Recovery", true);
         forgotDialog.setSize(480, 380);
@@ -492,7 +492,7 @@ public class LoginInterface extends JFrame {
         titleLabel.setForeground(PRIMARY_COLOR);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        JLabel subtitleLabel = new JLabel("We'll send you a temporary 6-digit access code ");
+        JLabel subtitleLabel = new JLabel("We'll send you a temporary 6-digit access code");
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         subtitleLabel.setForeground(TEXT_COLOR);
         subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -509,7 +509,7 @@ public class LoginInterface extends JFrame {
         emailLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         emailLabel.setForeground(TEXT_COLOR);
 
-        // Fixed text field with proper height and visibility
+        //  text field with proper height and visibility
         JTextField emailField = new JTextField() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -664,7 +664,7 @@ public class LoginInterface extends JFrame {
                 // Store temporary code in Firebase (with expiration)
                 storeTemporaryCode(email, tempCode);
 
-                // Simulate sending email with the code (you can implement actual email sending)
+
                 sendCodeEmail(email, tempCode);
 
                 SwingUtilities.invokeLater(() -> {
@@ -755,11 +755,11 @@ public class LoginInterface extends JFrame {
         return false;
     }
 
-    // Send email with temporary code (placeholder - implement with actual email service)
+    // Send email with temporary code
     private void sendCodeEmail(String email, String code) {
 
         final String username = "linkapp.java@gmail.com"; // your email
-        final String password = "avdb xrdx xbse glav";    // your app password (not your Gmail password!)
+        final String password = "stcr onnn igvo drvl";    // your app password
 
         java.util.Properties props = new java.util.Properties();
         props.put("mail.smtp.auth", "true");
@@ -834,7 +834,11 @@ public class LoginInterface extends JFrame {
         JPasswordField newPasswordField = new JPasswordField();
         newPasswordField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         newPasswordField.setPreferredSize(new Dimension(350, 40));
+        newPasswordField.setMinimumSize(new Dimension(350, 40));
+        newPasswordField.setMaximumSize(new Dimension(350, 40));
         newPasswordField.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        // Simple placeholder for new password
+        newPasswordField.putClientProperty("JTextField.placeholderText", "Enter new password");
         newPassPanel.add(newPassLabel, BorderLayout.NORTH);
         newPassPanel.add(newPasswordField, BorderLayout.CENTER);
 
@@ -846,7 +850,11 @@ public class LoginInterface extends JFrame {
         JPasswordField confirmPasswordField = new JPasswordField();
         confirmPasswordField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         confirmPasswordField.setPreferredSize(new Dimension(350, 40));
+        confirmPasswordField.setMinimumSize(new Dimension(350, 40));
+        confirmPasswordField.setMaximumSize(new Dimension(350, 40));
         confirmPasswordField.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        // Simple placeholder for confirm password
+        confirmPasswordField.putClientProperty("JTextField.placeholderText", "Confirm new password");
         confirmPassPanel.add(confirmPassLabel, BorderLayout.NORTH);
         confirmPassPanel.add(confirmPasswordField, BorderLayout.CENTER);
 
@@ -1013,7 +1021,7 @@ public class LoginInterface extends JFrame {
         return button;
     }
 
-    // EXISTING METHODS FROM YOUR ORIGINAL CODE (unchanged)
+
 
     private JPanel createLogoPanel() {
         JPanel logoPanel = new JPanel();
@@ -1042,19 +1050,19 @@ public class LoginInterface extends JFrame {
             int width = reader.getWidth(0);
             int height = reader.getHeight(0);
 
-            // Create a high-quality scaled image
+            // Create a scaled image
             BufferedImage originalImage = reader.read(0);
             Image scaledImage = getHighQualityScaledImage(originalImage, 200, 200);
 
-            // Create a high-quality ImageIcon
+            // Create a  ImageIcon
             ImageIcon logoIcon = new ImageIcon(scaledImage);
 
-            // Create JLabel for the logo with high-quality rendering
+            // Create JLabel for the logo  rendering
             JLabel logoLabel = new JLabel(logoIcon) {
                 @Override
                 protected void paintComponent(Graphics g) {
                     Graphics2D g2d = (Graphics2D) g.create();
-                    // Enable high-quality rendering
+                    // Enable  rendering
                     g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                     g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
                     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -1102,7 +1110,7 @@ public class LoginInterface extends JFrame {
         g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-        // Draw the image with high quality
+        // Draw the image 
         g2.drawImage(srcImg, 0, 0, width, height, null);
         g2.dispose();
 
