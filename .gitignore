@@ -42,3 +42,7 @@ target/
 *.log
 *.class
 *.iml
+
+# Sensitive config files
+.env
+config.properties
