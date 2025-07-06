@@ -259,12 +259,18 @@ public class ChatInterface extends JFrame {
         userInfo.add(onlineStatusLabel, BorderLayout.SOUTH);
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setBackground(Color.WHITE);
-        JButton groupInfo = createHeaderButton(FontIcon.of(FontAwesome.INFO_CIRCLE, 20, PRIMARY_COLOR));
-        groupInfo.addActionListener(e -> showGroupInfo());
+        JButton infoButton = createHeaderButton(FontIcon.of(FontAwesome.INFO_CIRCLE, 20, PRIMARY_COLOR));
+        infoButton.addActionListener(e -> {
+            if (currentChat != null && currentChat.isGroup) {
+                showGroupInfo();
+            } else if (currentChat != null) {
+                showUserInfo();
+            }
+        });
         JButton videoCall = createHeaderButton(FontIcon.of(FontAwesome.VIDEO_CAMERA, 20, PRIMARY_COLOR));
         JButton voiceCall = createHeaderButton(FontIcon.of(FontAwesome.PHONE, 20, PRIMARY_COLOR));
         JButton moreOptions = createHeaderButton(FontIcon.of(FontAwesome.ELLIPSIS_H, 20, PRIMARY_COLOR));
-        actions.add(groupInfo);
+        actions.add(infoButton);
         actions.add(videoCall);
         actions.add(voiceCall);
         actions.add(moreOptions);
@@ -1657,7 +1663,7 @@ public class ChatInterface extends JFrame {
             }
         });
 
-        dialog.add(contentPanel, BorderLayout.CENTER);
+        dialog.add(contentPanel);
         dialog.setVisible(true);
     }
 
@@ -1774,6 +1780,157 @@ public class ChatInterface extends JFrame {
         final String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
         int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
         return new java.text.DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+    }
+
+    // Ajout d'une méthode pour afficher les infos d'un utilisateur (hors groupe)
+    private void showUserInfo() {
+        if (currentChat == null || currentChat.isGroup) return;
+        UserInfo user = (UserInfo) currentChat.chatInfo;
+        JDialog dialog = new JDialog(this, "User Info", true);
+        dialog.setSize(370, 500);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+        dialog.getContentPane().setBackground(BACKGROUND_COLOR);
+        dialog.setResizable(false);
+
+        // Use BoxLayout for vertical alignment
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(new EmptyBorder(24, 32, 24, 32));
+        contentPanel.setBackground(BACKGROUND_COLOR);
+
+        // Title
+        JLabel titleLabel = new JLabel("User Info");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setForeground(TEXT_COLOR);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(titleLabel);
+        contentPanel.add(Box.createVerticalStrut(18));
+
+        // Avatar preview (perfectly round)
+        int avatarSize = 90;
+        String avatarUrl = user.avatar;
+        String initial = user.name != null && !user.name.isEmpty() ? user.name.substring(0, 1).toUpperCase() : "?";
+        JPanel avatarPanel = new JPanel() {
+            Image avatarImg = null;
+            boolean hasImage = false;
+            {
+                setPreferredSize(new Dimension(avatarSize, avatarSize));
+                setMaximumSize(new Dimension(avatarSize, avatarSize));
+                setMinimumSize(new Dimension(avatarSize, avatarSize));
+                setOpaque(false);
+                if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                    try {
+                        avatarImg = new ImageIcon(new java.net.URL(avatarUrl)).getImage().getScaledInstance(avatarSize, avatarSize, Image.SCALE_SMOOTH);
+                        hasImage = true;
+                    } catch (Exception e) {
+                        hasImage = false;
+                    }
+                }
+            }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillOval(0, 0, avatarSize, avatarSize);
+                if (hasImage && avatarImg != null) {
+                    g2.setClip(new java.awt.geom.Ellipse2D.Float(0, 0, avatarSize, avatarSize));
+                    g2.drawImage(avatarImg, 0, 0, avatarSize, avatarSize, null);
+                } else {
+                    g2.setColor(PRIMARY_COLOR);
+                    g2.setFont(new Font("Segoe UI", Font.BOLD, 40));
+                    FontMetrics fm = g2.getFontMetrics();
+                    int x = (avatarSize - fm.stringWidth(initial)) / 2;
+                    int y = (avatarSize + fm.getAscent() - fm.getDescent()) / 2;
+                    g2.drawString(initial, x, y);
+                }
+                g2.dispose();
+            }
+        };
+        avatarPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(avatarPanel);
+        contentPanel.add(Box.createVerticalStrut(10));
+
+        // Display name (lecture seule)
+        JLabel nameLabel = new JLabel("Display Name:");
+        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        nameLabel.setForeground(TEXT_COLOR);
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(nameLabel);
+        contentPanel.add(Box.createVerticalStrut(4));
+        JLabel nameValue = new JLabel(user.name);
+        nameValue.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        nameValue.setForeground(TEXT_COLOR);
+        nameValue.setBorder(new EmptyBorder(8, 10, 8, 10));
+        nameValue.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(nameValue);
+        contentPanel.add(Box.createVerticalStrut(10));
+
+        // Email (lecture seule)
+        JLabel emailLabel = new JLabel("Email:");
+        emailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        emailLabel.setForeground(TEXT_COLOR);
+        emailLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(emailLabel);
+        contentPanel.add(Box.createVerticalStrut(4));
+        JLabel emailValue = new JLabel(user.email);
+        emailValue.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        emailValue.setForeground(TEXT_COLOR);
+        emailValue.setBorder(new EmptyBorder(8, 10, 8, 10));
+        emailValue.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(emailValue);
+        contentPanel.add(Box.createVerticalStrut(10));
+
+        // Statut (lecture seule)
+        JLabel statusLabel = new JLabel("Status:");
+        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        statusLabel.setForeground(TEXT_COLOR);
+        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(statusLabel);
+        contentPanel.add(Box.createVerticalStrut(4));
+        JLabel statusValue = new JLabel(user.status != null ? user.status : "unknown");
+        statusValue.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        statusValue.setForeground(TEXT_COLOR);
+        statusValue.setBorder(new EmptyBorder(8, 10, 8, 10));
+        statusValue.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(statusValue);
+        contentPanel.add(Box.createVerticalStrut(10));
+
+        // Last seen (lecture seule)
+        JLabel lastSeenLabel = new JLabel("Last seen:");
+        lastSeenLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lastSeenLabel.setForeground(TEXT_COLOR);
+        lastSeenLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(lastSeenLabel);
+        contentPanel.add(Box.createVerticalStrut(4));
+        String lastSeenStr = user.lastSeen > 0 ? new java.text.SimpleDateFormat("MMM d, yyyy HH:mm").format(new java.util.Date(user.lastSeen)) : "N/A";
+        JLabel lastSeenValue = new JLabel(lastSeenStr);
+        lastSeenValue.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        lastSeenValue.setForeground(TEXT_COLOR);
+        lastSeenValue.setBorder(new EmptyBorder(8, 10, 8, 10));
+        lastSeenValue.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(lastSeenValue);
+        contentPanel.add(Box.createVerticalStrut(18));
+
+        // Close button
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.setOpaque(false);
+        JButton closeButton = new JButton("Close");
+        styleDialogButton(closeButton, Color.WHITE, BORDER_COLOR, TEXT_COLOR);
+        closeButton.setPreferredSize(new Dimension(120, 38));
+        closeButton.setMaximumSize(new Dimension(120, 38));
+        closeButton.setMinimumSize(new Dimension(120, 38));
+        buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.add(closeButton);
+        buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        closeButton.addActionListener(e -> dialog.dispose());
+        contentPanel.add(buttonPanel);
+
+        dialog.add(contentPanel);
+        dialog.setVisible(true);
     }
 
     public static void main(String[] args) {
