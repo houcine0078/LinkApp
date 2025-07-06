@@ -300,7 +300,7 @@ Before running LinkApp, ensure you have the following installed:
    ```properties
    FIREBASE_API_KEY=your_firebase_api_key_here
    FIREBASE_DATABASE_URL=https://your-project-default-rtdb.firebaseio.com/
-   ``` [1](#4-0) 
+   
 
 3. **Install dependencies and compile**
    ```bash
